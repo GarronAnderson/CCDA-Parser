@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parser module &mdash; CCDA Parser 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="parseCCDA module" href="parseCCDA.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            CCDA Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="codeData.html">codeData module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loadLOINCCodes.html">loadLOINCCodes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parseCCDA.html">parseCCDA module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">parser module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#parser.Parser"><code class="docutils literal notranslate"><span class="pre">Parser</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#parser.Parser.DOB"><code class="docutils literal notranslate"><span class="pre">Parser.DOB()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parser.Parser.address"><code class="docutils literal notranslate"><span class="pre">Parser.address()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parser.Parser.gender"><code class="docutils literal notranslate"><span class="pre">Parser.gender()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parser.Parser.get_component"><code class="docutils literal notranslate"><span class="pre">Parser.get_component()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parser.Parser.get_data"><code class="docutils literal notranslate"><span class="pre">Parser.get_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parser.Parser.lookup_code"><code class="docutils literal notranslate"><span class="pre">Parser.lookup_code()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parser.Parser.name"><code class="docutils literal notranslate"><span class="pre">Parser.name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parser.Parser.race_ethnicity"><code class="docutils literal notranslate"><span class="pre">Parser.race_ethnicity()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#parser.ParserException"><code class="docutils literal notranslate"><span class="pre">ParserException</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CCDA Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">parser module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/parser.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-parser">
+<span id="parser-module"></span><h1>parser module<a class="headerlink" href="#module-parser" title="Link to this heading"></a></h1>
+<p>CCDA Parser</p>
+<p>By Garron Anderson</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="parser.Parser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">parser.</span></span><span class="sig-name descname"><span class="pre">Parser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parse CCDA files.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="parser.Parser.DOB">
+<span class="sig-name descname"><span class="pre">DOB</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser.DOB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser.DOB" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the patient’s date of birth.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="parser.Parser.address">
+<span class="sig-name descname"><span class="pre">address</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser.address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser.address" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the patient’s address.
+Returns a 3 line string suitable for printing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="parser.Parser.gender">
+<span class="sig-name descname"><span class="pre">gender</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser.gender"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser.gender" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the patient’s gender.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="parser.Parser.get_component">
+<span class="sig-name descname"><span class="pre">get_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser.get_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser.get_component" title="Link to this definition"></a></dt>
+<dd><p>Get one of the components. Handles a variable number of components and different titles.</p>
+<p>Uses lookup_code to access database.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="parser.Parser.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">codesystem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser.get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser.get_data" title="Link to this definition"></a></dt>
+<dd><p>Get the data from an object with a field.</p>
+<p>Does not yet support auto-detecting codesystem -
+so codesystem must be provided as an argument.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="parser.Parser.lookup_code">
+<span class="sig-name descname"><span class="pre">lookup_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">codesystem</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser.lookup_code"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser.lookup_code" title="Link to this definition"></a></dt>
+<dd><p>Lookup a code in the SQLite database by codesystem.</p>
+<p>To perform a reverse lookup, prefix ‘codesystem’ with ‘<a href="#id1"><span class="problematic" id="id2">reverse_</span></a>’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="parser.Parser.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser.name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser.name" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the patient’s name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="parser.Parser.race_ethnicity">
+<span class="sig-name descname"><span class="pre">race_ethnicity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parser.html#Parser.race_ethnicity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.Parser.race_ethnicity" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the patient’s race and ethnicity (as a tuple).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="parser.ParserException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">parser.</span></span><span class="sig-name descname"><span class="pre">ParserException</span></span><a class="reference internal" href="_modules/parser.html#ParserException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#parser.ParserException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>A class for when the parser raises an exception.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="parseCCDA.html" class="btn btn-neutral float-left" title="parseCCDA module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Garron Anderson.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,3 +1,11 @@
+"""
+Old (but working) version of a CCDA parser.
+
+Will be removed and replaced with the OOP parser.
+
+Was just meant to be a test area.
+"""
+
 import pprint
 import xmltodict
 from datetime import datetime

@@ -1,3 +1,9 @@
+"""
+Raw data (as dicts) of the codes and mappings.
+
+Currently being replaced by a SQLite database.
+"""
+
 loinc_codes = {
     "48765-2": "Allergies, Adverse Reactions, Alerts",
     "51847-2": "Assessment and Plan",

@@ -13,7 +13,9 @@ class ParserException(Exception):
     pass
 
 class Parser:
-    """Parse CCDA files."""
+    """The main class that handles the parsing of CCDA files.
+
+    Generates name, address, etc."""
     def __init__(self, filename):
         with open(filename) as ccda:
             ccda_text = ccda.read()

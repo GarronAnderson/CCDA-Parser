@@ -1,4 +1,8 @@
-# execute_many.py
+"""
+Load a large CSV file into a SQLite database with a chunker.
+
+Run once to update LOINC database in codeDatabase.db.
+"""
 
 import csv
 import datetime
