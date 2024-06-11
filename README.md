@@ -8,4 +8,7 @@ However, I couldn't find a Python parser that worked. So, I decided to write one
 
 ## BETA
 This project is still under developement and parts of it are non-functional. 
+
+## Docs
 Docs are being updated and are not particularly great at this stage.
+Read them [here](docs/_build/html/index.html).
