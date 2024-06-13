@@ -22,7 +22,7 @@ def file_chunker(fp, batch_size):
 
 if __name__ == "__main__":
 
-    db = sqlite3.connect(r"..\src\codeDatabase.db")
+    db = sqlite3.connect(r"codeDatabase.db")
     cur = db.cursor()
 
     cur.execute(

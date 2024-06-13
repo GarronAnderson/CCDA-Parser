@@ -60,7 +60,6 @@ snomed_codes = {
     "449868002": "Current every day smoker",
     "77176002": "Smoker, current status unknown",
     "8517006": "Former smoker",
-    "no info": "no info",
 }
 
 reverse_snomed_codes = {
