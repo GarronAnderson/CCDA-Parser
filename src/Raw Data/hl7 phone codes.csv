@@ -1,12 +1,16 @@
-AS,answering service
 BAD,bad address
-DIR,direct
-EC,emergency contact
+CONF,confidential address
 H,home address
 HP,primary home
 HV,vacation home
-MC,mobile contact
-PG,pager
-PUB,public
+OLD,no longer in use
 TMP,temporary address
 WP,work place
+DIR,direct
+PUB,public
+PHYS,physical visit address
+PST,postal address
+AS,answering service
+EC,emergency contact
+MC,mobile contact
+PG,pager

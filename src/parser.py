@@ -7,6 +7,7 @@ import sqlite3 as sqlite
 import datetime
 
 import xmltodict
+from iso639 import Lang
 
 class ParserException(Exception):
     """A class for when the parser raises an exception."""
@@ -31,6 +32,81 @@ class Parser:
 
         self.db_conn = sqlite.connect("codeDatabase.db")
         self.db_cursor = self.db_conn.cursor()
+        
+    # INTERNAL FUNCTIONS
+    
+    def lookup_code(self, code, codesystem):
+        """
+        Lookup a code in the SQLite database by codesystem.
+        
+        To perform a reverse lookup, prefix 'codesystem' with 'reverse_'.
+        """
+        if code is None:
+            return 'no info'
+        
+        query_params = {'code':code}
+        
+        if codesystem.startswith("reverse_"):
+            codesystem = codesystem[8:]
+            out = self.db_cursor.execute(f"SELECT code FROM {codesystem} WHERE description = :code", query_params)
+        else:
+            out = self.db_cursor.execute(f"SELECT description FROM {codesystem} WHERE code = :code", query_params)
+        
+        out = list(out)
+        
+        return out[0][0]
+    
+    def get_data(self, obj, field='@code', codesystem=None):
+        """
+        Get the data from an object with a field.
+        
+        Does not yet support auto-detecting codesystem -
+        so codesystem must be provided as an argument.
+        """
+        if codesystem is None:
+            codesys_raw = obj.get("@codeSystem", None)        
+            
+            r = list(self.db_cursor.execute("select codesystem_name from codesystems where codesystem_id = ?", (codesys_raw,)))
+            
+            
+            codesystem = r[0][0]
+            
+            if codesystem is None:
+                raise ParserExcepetion("must provide codesystem")
+        
+        code = obj.get(field, None)
+        
+        data = self.lookup_code(code, codesystem)
+        
+        return data
+        
+    def get_component(self, name=None, index=None):
+        """
+        Get one of the components. Handles a variable number of components and different titles.
+        
+        Uses lookup_code to access database and a dict to handle multiple names.
+        """
+        
+        components_possible = {'Vital Signs':['Vital signs', 'Vital signs, weight, height, head circumference, oxygen saturation & BMI panel']}
+        
+        
+        if name is None:
+            return(self.components[index])
+        
+        if name in components_possible:
+            # ok, multiple possibilities
+            for new_name in components_possible[name]:
+                # run through each
+                try:
+                    return self.get_component(name=new_name)
+                except IndexError:
+                    pass # couldn't find it
+        else:
+            return self.get_component(index=
+                self.component_list.index(
+                self.lookup_code(name, codesystem='reverse_loinc')))
+                
+    # DATA FUNCTIONS
 
     def name(self):
         """
@@ -50,9 +126,7 @@ class Parser:
         Retrieve the patient's gender.
         """
 
-        return self.patient["administrativeGenderCode"].get(
-            "@displayName", "no info"
-        )
+        return self.get_data(self.patient["administrativeGenderCode"])
 
     def DOB(self):
         """
@@ -79,6 +153,9 @@ class Parser:
         )
 
         return patientRace, patientEthnicity
+    
+    def language(self):
+        pass
 
     def address(self):
         """
@@ -109,53 +186,23 @@ class Parser:
         
         return patientAddr
     
-    def lookup_code(self, code, codesystem):
+    def phone(self):
         """
-        Lookup a code in the SQLite database by codesystem.
-        
-        To perform a reverse lookup, prefix 'codesystem' with 'reverse_'.
+        Get the patient's phone and phone type as a tuple.
         """
-        if code is None:
-            return 'no info'
+        phoneNumber = self.patientRole["telecom"]["@value"][4:]
+        phoneType = self.get_data(self.patientRole["telecom"], field='@use', codesystem='hl7_address_use')
         
-        query_params = {'code':code}
-        
-        if codesystem.startswith("reverse_"):
-            codesystem = codesystem[8:]
-            out = self.db_cursor.execute(f"SELECT code FROM {codesystem} WHERE description = :code", query_params)
-        else:
-            out = self.db_cursor.execute(f"SELECT description FROM {codesystem} WHERE code = :code", query_params)
-        
-        return out[0][0]
+        return phoneNumber, phoneType
     
-    def get_data(self, obj, field, codesystem=None):
-        """
-        Get the data from an object with a field.
+    def get_vital_index(self, vital):
+        vital_signs = self.get_component(name = 'Vital Signs')["section"]["entry"]["organizer"]["component"]
         
-        Does not yet support auto-detecting codesystem -
-        so codesystem must be provided as an argument.
-        """
+        out = list(self.db_cursor.execute(f"SELECT code FROM loinc WHERE description = ?", (vital,)))
+        index = -1
         
-        if codesystem is None:
-            raise ParserExcepetion("must provide codesystem")
-        
-        code = obj.get(field, None)
-        
-        data = self.lookup_code(code, codesystem)
-        
-        return data
-        
-    def get_component(self, name=None, index=None):
-        """
-        Get one of the components. Handles a variable number of components and different titles.
-        
-        Uses lookup_code to access database.
-        """
-        
-        if name is None:
-            return(self.components[index])
-        else:
-            return self.get_component(index=
-                self.component_list.index(
-                self.lookup_code(name, codesystem='reverse_loinc')))
-                
+        for i, sign in enumerate(vital_signs):
+            vital_code = sign["observation"]["code"]["@code"]
+            for code in out:
+                if vital_code == code:
+                    print('found at index', i)
