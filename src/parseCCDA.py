@@ -12,7 +12,7 @@ from datetime import datetime
 from iso639 import Lang
 from codeData import *
 
-ccda_filename = "Patient-28.xml"
+ccda_filename = r"CCDAs\Sample CCDA 2.xml"
 
 with open(ccda_filename) as ccda:
     ccda_text = ccda.read()
@@ -139,5 +139,6 @@ print()
 print("Height:", height_val, height_unit)
 print("Weight:", weight_val, weight_unit)
 print("BMI: ", bmi, bmi_unit)
+
 print()
 print("Smoking Status:", smoking_status, "<as of", smoking_date, "\b>")
