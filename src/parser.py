@@ -1,15 +1,16 @@
 """
 CCDA Parser
-
+6/30/24
 By Garron Anderson"""
 
+from collections import namedtuple
 import datetime
 import sqlite3 as sqlite
 
 import xmltodict
 
 import iso639
-from ucumvert import PintUcumRegistry
+from pint import UnitRegistry
 
 
 class ParserException(Exception):
@@ -22,7 +23,11 @@ class Parser:
     Generates name, address, etc."""
 
     def __init__(self, filename):
-        with open(filename) as ccda:
+        """
+        Start up parser given a filename.
+        """
+        self._filename = filename
+        with open(self._filename, encoding='utf8') as ccda: # load file
             ccda_text = ccda.read()
             self.ccda_data = xmltodict.parse(ccda_text)
 
@@ -38,12 +43,18 @@ class Parser:
         for i in range(len(self.components)):
             self.component_list.append(self.components[i]["section"]["code"]["@code"])
 
+        # connect to db
         self.db_conn = sqlite.connect("codeDatabase.db")
         self.db_cursor = self.db_conn.cursor()
 
-        self.ucumureg = PintUcumRegistry()
+        self.ucum_registry = UnitRegistry(system='UCUM')
+        
+        self.height_factory = namedtuple("Height", "feet inches")
 
     # INTERNAL FUNCTIONS
+
+    def _connect_db(self):
+        return sqlite.connect("codeDatabase.db")
 
     def lookup_code(self, code, codesystem):
         """
@@ -69,8 +80,11 @@ class Parser:
             )
 
         out = list(out)
+        try:
+            return out[0][0]
+        except IndexError:
+            return ''
 
-        return out[0][0]
 
     def get_data(self, obj, field="@code", codesystem=None):
         """
@@ -82,11 +96,11 @@ class Parser:
         if field not in list(obj.keys()):
             return "no info"
 
-        if codesystem is None:
+        if codesystem is None: # autodetect
             codesys_raw = obj.get("@codeSystem", None)
 
-            if codesys_raw is None:
-                raise ParserException("must provide codesystem")
+            if codesys_raw is None: # no info, can't autodetect
+                raise ParserException("must provide codesystem") from None
 
             r = list(
                 self.db_cursor.execute(
@@ -94,14 +108,16 @@ class Parser:
                     (codesys_raw,),
                 )
             )
-
-            codesystem = r[0][0]
+            codesystem = None
+            
+            if r: codesystem = r[0][0]
 
             if codesystem is None:
-                raise ParserException("must provide codesystem")
+                raise ParserException("must provide codesystem") from None
 
+        # grab code
         code = obj.get(field, None)
-
+        # and look up
         data = self.lookup_code(code, codesystem)
 
         return data
@@ -112,7 +128,8 @@ class Parser:
 
         Uses lookup_code to access database and a dict to handle multiple names.
         """
-
+        
+        # multiple possibilites
         components_possible = {
             "Vital Signs": [
                 "Vital signs",
@@ -120,10 +137,10 @@ class Parser:
             ]
         }
 
-        if name is None:
+        if name is None: # use index
             return self.components[index]
 
-        if name in components_possible:
+        if name in components_possible: 
             # ok, multiple possibilities
             for new_name in components_possible[name]:
                 # run through each
@@ -132,27 +149,37 @@ class Parser:
                 except IndexError:
                     pass  # couldn't find it
         else:
-            return self.get_component(
-                index=self.component_list.index(
-                    self.lookup_code(name, codesystem="reverse_loinc")
-                )
-            )
+            code = self.lookup_code(name, codesystem="reverse_loinc")
+            if code not in self.component_list: # non existent component
+                return None
+            else:
+                return self.get_component(
+                index=self.component_list.index(code))
 
+
+    @staticmethod
+    def _parse_date(date_str):
+        try:
+            return datetime.datetime.strptime(date_str[:8], "%Y%m%d").strftime("%m/%d/%Y")
+        except ValueError:
+            return "no info"
+    
     # DATA FUNCTIONS
 
     @property
     def name(self):
-        """
-        Retrieve the patient's name.
-        """
-        try:
-            patientGivenName = self.patient["name"]["given"]["#text"]
-            patientFamilyName = self.patient["name"]["family"]["#text"]
-        except TypeError:
-            patientGivenName = self.patient["name"]["given"]
-            patientFamilyName = self.patient["name"]["family"]
-
-        return patientGivenName + " " + patientFamilyName
+        try: # different formats
+            given_name = self.patient["name"][0]["given"]
+            family_name = self.patient["name"][0]["family"]
+        except:
+            given_name = self.patient["name"]["given"]
+            family_name = self.patient["name"]["family"]
+        
+        if isinstance(given_name, dict):
+            given_name = given_name.get("#text", "no info")
+        if isinstance(family_name, dict):
+            family_name = family_name.get("#text", "no info")
+        return f"{given_name} {family_name}"
 
     @property
     def gender(self):
@@ -163,20 +190,13 @@ class Parser:
         return self.get_data(self.patient["administrativeGenderCode"])
 
     @property
-    def DOB(self):
+    def dob(self):
         """
-        Retrieve the patient's date of birth.
+        Get the patient's date of birth.
         """
-
-        try:
-            patientDOBRaw = self.patient["birthTime"]["@value"][:8]
-            patientDOB = datetime.datetime.strptime(patientDOBRaw, "%Y%m%d").strftime(
-                "%m/%d/%Y"
-            )
-        except KeyError:
-            patientDOB = "no info"
-
-        return patientDOB
+        
+        dob_raw = self.patient.get("birthTime", {}).get("@value", "no info")
+        return self._parse_date(dob_raw)
 
     @property
     def race_ethnicity(self):
@@ -188,15 +208,8 @@ class Parser:
 
         return patientRace, patientEthnicity
 
-    @property
-    def language(self):
-        """
-        Return the patient's language and preference as a tuple.
-        """
-
-        langCode = self.patient["languageCommunication"]["languageCode"].get(
-            "@code", None
-        )
+    def get_lang_and_pref(self, entry):
+        langCode = entry["languageCode"].get("@code", None)
 
         if langCode is not None:
             lang = iso639.Lang(langCode).name
@@ -204,13 +217,28 @@ class Parser:
             lang = "no info"
 
         try:
-            preferred = {"true": "yes", "false": "no"}[
-                self.patient["languageCommunication"]["preferenceInd"]["@value"]
-            ]
+            preferred = {"true": "yes", "false": "no"}[entry["preferenceInd"]["@value"]]
         except KeyError:
             preferred = "no info"
 
         return lang, preferred
+
+    @property
+    def languages(self):
+        """
+        Return the patient's language and preference as a tuple.
+        """
+        langs, prefs = [], []
+        
+        if isinstance(self.patient["languageCommunication"], dict):
+            lang, pref = self.get_lang_and_pref(self.patient["languageCommunication"])
+            return [lang], [pref]
+        else:
+            for entry in self.patient["languageCommunication"]:
+                lang, pref = self.get_lang_and_pref(entry)
+                langs.extend([lang])
+                prefs.extend([pref])
+            return langs, prefs
 
     @property
     def address(self):
@@ -219,7 +247,11 @@ class Parser:
         Returns a 3 line string suitable for printing.
         """
         try:
-            addrLine = self.patientRole["addr"]["streetAddressLine"]
+            addrLines = self.patientRole["addr"]["streetAddressLine"]
+            if isinstance(addrLines, list):
+                addrLine = '\n'.join(addrLines)
+            else:
+                addrLine = addrLines
             addrCity = self.patientRole["addr"]["city"]
             addrState = self.patientRole["addr"]["state"]
             addrZIP = self.patientRole["addr"]["postalCode"]
@@ -253,57 +285,68 @@ class Parser:
         )
 
         return phoneNumber, phoneType
-
+       
+    def parse_smoking_data(self, entry):
+        entry = entry['observation']
+        status = 'no info'
+        date = 'no info'
+        good = False
+        
+        code = entry['code']['@code']
+        if code in ['72166-2', 'ASSERTION']:
+            good = True
+            status = self.get_data(entry["value"])
+            date = entry["effectiveTime"].get('low', entry["effectiveTime"]).get("@value", "no info")
+            if date != "no info":
+                date = self._parse_date(date)
+            
+        return status, date, good
+    
     @property
     def smoking_status(self):
         social_comp = self.get_component("Social history")
-        smoking_status = self.get_data(
-            social_comp["section"]["entry"]["observation"]["value"]
-        )
-        smoking_date = social_comp["section"]["entry"]["observation"]["effectiveTime"][
-            "low"
-        ].get("@value", "no info")
-
-        if smoking_date != "no info":
-            smoking_date = datetime.datetime.strptime(
-                smoking_date[:8], "%Y%m%d"
-            ).strftime("%m/%d/%Y")
-
+        smoking_entries = social_comp["section"]["entry"]
+        
+        smoking_status = 'no info'
+        smoking_date = 'no info'
+        good = False
+        
+        if isinstance(smoking_entries, dict):
+            smoking_status, smoking_date, good = self.parse_smoking_data(smoking_entries)
+        else:
+            for entry in smoking_entries:
+                smoking_status, smoking_date, good = self.parse_smoking_data(entry)
+                if good: break
+        
         return smoking_status, smoking_date
 
-    def get_latest_vital(self, vital):
-        vital_entries = self.get_component(name="Vital Signs")["section"]["entry"]
-
+    def _get_vital_codes(self, vital):
+        """
+        Helper method to get the LOINC codes for a given vital sign.
+        """
         possible_codes = {
             "Height": ["Height", "Body height"],
             "Weight": ["Weight", "Body weight"],
             "BMI": ["Body mass index"],
+            # Add other vitals as needed
         }
 
-        if vital in list(possible_codes.keys()):
-            codes = []
-            for code in possible_codes[vital]:
-                codes.extend(
-                    [
-                        a[0]
-                        for a in list(
-                            self.db_cursor.execute(
-                                "select code from loinc where description = ?", (code,)
-                            )
-                        )
-                    ]
-                )
-        else:
-            codes = [
-                a[0]
-                for a in list(
-                    self.db_cursor.execute(
-                        "select code from loinc where description = ?", (vital,)
-                    )
-                )
-            ]
+        descriptions = possible_codes.get(vital, [])
+        codes = []
 
-        if codes == []:
+        with self._connect_db() as conn:
+            cursor = conn.cursor()
+            for description in descriptions:
+                cursor.execute("SELECT code FROM loinc WHERE description = ?", (description,))
+                codes.extend([row[0] for row in cursor.fetchall()])
+
+        return codes
+    
+    def get_latest_vital(self, vital):
+        vital_entries = self.get_component(name="Vital Signs")["section"]["entry"]
+        vital_codes = self._get_vital_codes(vital)
+        
+        if not vital_codes:
             raise ParserException(f"Invalid vital {vital}")
 
         vital_signs = None
@@ -321,7 +364,7 @@ class Parser:
                 for j, obs in enumerate(vital_obs):
                     observation = obs["observation"]
                     obs_code = observation["code"]["@code"]
-                    if obs_code in codes:
+                    if obs_code in vital_codes:
                         try:
                             effectiveTime = observation["effectiveTime"]["@value"]
                         except KeyError:  # couldn't find it, ignore
@@ -350,7 +393,7 @@ class Parser:
             for obs in vital_signs:
                 observation = obs["observation"]
                 obs_code = observation["code"]["@code"]
-                if obs_code in codes:  # found it
+                if obs_code in vital_codes:  # found it
                     # grab value
                     obs_value = observation["value"]["@value"]
                     obs_unit = observation["value"]["@unit"]
@@ -359,7 +402,36 @@ class Parser:
     @property
     def height(self):
         raw_height, unit = self.get_latest_vital("Height")
+        if raw_height == "no info" or unit == "no info":
+            return self.height_factory('no info', 'no info')
 
-        height = raw_height * self.ucumureg.from_ucum(unit)
-
+        height = float(raw_height) * self.ucum_registry.parse_expression(unit).to('inches').magnitude
+        feet, inches = divmod(height, 12)
+        
+        height = self.height_factory(int(feet), round(inches))
+        
         return height
+    
+    @property
+    def weight(self):
+        raw_weight, unit = self.get_latest_vital("Weight")
+        if raw_weight == "no info" or unit == "no info":
+            return "no info"
+
+        weight = float(raw_weight) * self.ucum_registry.parse_expression(unit).to('pounds').magnitude
+        return round(weight)
+        
+    @property
+    def bmi(self):
+        raw_bmi, _ = self.get_latest_vital("BMI")
+        if raw_bmi == "no info":
+            return "no info"
+        
+        return round(float(raw_bmi))
+    
+    def insurance(self):
+        insurance_comp = self.get_component("Payment sources")['section']
+        if insurance_comp is None: return 'no info'
+        
+        coverage_acty = insurance_comp['entry']['act']
+        
