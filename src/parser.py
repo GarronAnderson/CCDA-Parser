@@ -122,6 +122,30 @@ class Parser:
 
         return data
 
+    def _get_vital_codes(self, vital):
+        """
+        Helper method to get the LOINC codes for a given vital sign.
+        """
+        possible_codes = {
+            "Height": ["Height", "Body height"],
+            "Weight": ["Weight", "Body weight"],
+            "BMI": ["Body mass index"],
+            # Add other vitals as needed
+        }
+
+        descriptions = possible_codes.get(vital, [])
+        codes = []
+
+        with self._connect_db() as conn:
+            cursor = conn.cursor()
+            for description in descriptions:
+                cursor.execute(
+                    "SELECT code FROM loinc WHERE description = ?", (description,)
+                )
+                codes.extend([row[0] for row in cursor.fetchall()])
+
+        return codes
+
     def get_component(self, name=None, index=None):
         """
         Get one of the components. Handles a variable number of components and different titles.
@@ -156,224 +180,6 @@ class Parser:
                 return None
             else:
                 return self.get_component(index=self.component_list.index(code))
-
-    @staticmethod
-    def _parse_date(date_str):
-        """
-        Parse a YYYYMMDD date to MM/DD/YYYY.
-        """
-        try:
-            return datetime.datetime.strptime(date_str[:8], "%Y%m%d").strftime(
-                "%m/%d/%Y"
-            )
-        except ValueError:
-            return "no info"
-
-    # DATA FUNCTIONS
-
-    @property
-    def name(self):
-        """
-        Retrieve the patient's name.
-        """
-        name = self.patient["name"]
-        if isinstance(name, list):
-            given_name = name[0]["given"]
-            family_name = name[0]["family"]
-        else:
-            given_name = name["given"]
-            family_name = name["family"]
-
-        if isinstance(given_name, dict):
-            given_name = given_name.get("#text", "no info")
-        if isinstance(family_name, dict):
-            family_name = family_name.get("#text", "no info")
-        return f"{given_name} {family_name}"
-
-    @property
-    def gender(self):
-        """
-        Retrieve the patient's gender.
-        """
-
-        return self.get_data(self.patient["administrativeGenderCode"])
-
-    @property
-    def dob(self):
-        """
-        Get the patient's date of birth, formatted as MM/DD/YYYY.
-        """
-
-        dob_raw = self.patient.get("birthTime", {}).get("@value", "no info")
-        return self._parse_date(dob_raw)
-
-    @property
-    def race_ethnicity(self):
-        """
-        Retrieve the patient's race and ethnicity (as a tuple, `(race, ethnicity)`).
-        """
-        patientRace = self.get_data(self.patient["raceCode"])
-        patientEthnicity = self.get_data(self.patient["ethnicGroupCode"])
-
-        return patientRace, patientEthnicity
-
-    def _get_lang_and_pref(self, entry):
-        """
-        Extract a language and associated preference code from `entry`.
-        """
-
-        langCode = entry["languageCode"].get("@code", None)
-
-        if langCode is not None:
-            lang = iso639.Lang(langCode).name
-        else:
-            lang = "no info"
-
-        try:
-            preferred = {"true": "yes", "false": "no"}[entry["preferenceInd"]["@value"]]
-        except KeyError:
-            preferred = "no info"
-
-        return lang, preferred
-
-    @property
-    def languages(self):
-        """
-        Return the patient's languages and preferences.
-
-        Returns two lists. The first is a list of human-readable language names, and the second is a list of yes/no preferences.
-        """
-
-        langs, prefs = [], []
-
-        if isinstance(self.patient["languageCommunication"], dict):
-            lang, pref = self._get_lang_and_pref(self.patient["languageCommunication"])
-            return [lang], [pref]
-        else:
-            for entry in self.patient["languageCommunication"]:
-                lang, pref = self._get_lang_and_pref(entry)
-                langs.extend([lang])
-                prefs.extend([pref])
-            return langs, prefs
-
-    @property
-    def address(self):
-        """
-        Retrieve the patient's address.
-        Returns a string suitable for printing.
-        """
-        try:
-            addrLines = self.patientRole["addr"]["streetAddressLine"]
-            if isinstance(addrLines, list):
-                addrLine = "\n".join(addrLines)
-            else:
-                addrLine = addrLines
-            addrCity = self.patientRole["addr"]["city"]
-            addrState = self.patientRole["addr"]["state"]
-            addrZIP = self.patientRole["addr"]["postalCode"]
-            addrCountry = self.patientRole["addr"]["country"]
-
-            addr = (
-                addrLine
-                + "\n"
-                + addrCity
-                + ", "
-                + addrState
-                + " "
-                + addrZIP
-                + "\n"
-                + addrCountry
-            )
-
-        except KeyError:
-            addr = "no info"
-
-        return addr
-
-    @property
-    def phone(self):
-        """
-        Get the patient's phone and phone type as a tuple.
-        """
-        phoneNumber = self.patientRole["telecom"]["@value"][4:]
-        phoneType = self.get_data(
-            self.patientRole["telecom"], field="@use", codesystem="hl7_address_use"
-        )
-
-        return phoneNumber, phoneType
-
-    def _parse_smoking_data(self, entry):
-        """
-        Parse a smoking status observation.
-        """
-
-        entry = entry["observation"]
-        status = "no info"
-        date = "no info"
-        good = False
-
-        code = entry["code"]["@code"]
-        if code in ["72166-2", "ASSERTION"]:
-            good = True
-            status = self.get_data(entry["value"])
-            date = (
-                entry["effectiveTime"]
-                .get("low", entry["effectiveTime"])
-                .get("@value", "no info")
-            )
-            if date != "no info":
-                date = self._parse_date(date)
-
-        return status, date, good
-
-    @property
-    def smoking_status(self):
-        """
-        Retrieve the patient's smoking status and date.
-        """
-
-        social_comp = self.get_component("Social history")
-        smoking_entries = social_comp["section"]["entry"]
-
-        smoking_status = "no info"
-        smoking_date = "no info"
-        good = False
-
-        if isinstance(smoking_entries, dict):
-            smoking_status, smoking_date, good = self._parse_smoking_data(
-                smoking_entries
-            )
-        else:
-            for entry in smoking_entries:
-                smoking_status, smoking_date, good = self._parse_smoking_data(entry)
-                if good:
-                    break
-
-        return smoking_status, smoking_date
-
-    def _get_vital_codes(self, vital):
-        """
-        Helper method to get the LOINC codes for a given vital sign.
-        """
-        possible_codes = {
-            "Height": ["Height", "Body height"],
-            "Weight": ["Weight", "Body weight"],
-            "BMI": ["Body mass index"],
-            # Add other vitals as needed
-        }
-
-        descriptions = possible_codes.get(vital, [])
-        codes = []
-
-        with self._connect_db() as conn:
-            cursor = conn.cursor()
-            for description in descriptions:
-                cursor.execute(
-                    "SELECT code FROM loinc WHERE description = ?", (description,)
-                )
-                codes.extend([row[0] for row in cursor.fetchall()])
-
-        return codes
 
     def get_latest_vital(self, vital):
         """
@@ -436,6 +242,255 @@ class Parser:
                     obs_unit = observation["value"]["@unit"]
                     return obs_value, obs_unit
 
+    # parser methods
+
+    def _parse_addr(self, addr):
+        """
+        Parse an addr into a human-readable string.
+        """
+        try:
+            addrLines = addr["streetAddressLine"]
+            if isinstance(addrLines, list):
+                addrLine = "\n".join(addrLines)
+            else:
+                addrLine = addrLines
+            addrCity = addr["city"]
+            addrState = addr["state"]
+            addrZIP = addr["postalCode"]
+            if "country" in addr:
+                addrCountry = addr["country"]
+            else:
+                addrCountry = "US"
+
+            addr = (
+                addrLine
+                + "\n"
+                + addrCity
+                + ", "
+                + addrState
+                + " "
+                + addrZIP
+                + "\n"
+                + addrCountry
+            )
+
+        except KeyError:
+            addr = "no info"
+
+        return addr
+
+    @staticmethod
+    def _parse_date(date_str):
+        """
+        Parse a YYYYMMDD date to MM/DD/YYYY.
+        """
+        try:
+            return datetime.datetime.strptime(date_str[:8], "%Y%m%d").strftime(
+                "%m/%d/%Y"
+            )
+        except ValueError:
+            return "no info"
+
+    def _parse_name(self, raw_name):
+        """
+        Parse a name into a string.
+        """
+        # set defaults
+        given_name, family_name = "no info", ""
+
+        if isinstance(raw_name, str):  # return the raw name
+            return raw_name
+
+        if isinstance(raw_name, list):  # return the first name of multiple
+            given_name = raw_name[0]["given"]
+            family_name = raw_name[0]["family"]
+        else:
+            given_name = raw_name["given"]
+            family_name = raw_name["family"]
+
+        if isinstance(given_name, dict):
+            given_name = given_name.get("#text", "no info")
+        if isinstance(family_name, dict):
+            family_name = family_name.get("#text", "no info")
+
+        return f"{given_name} {family_name}"
+
+    def _parse_telecoms(self, telecom):
+        """
+        Parse telecoms to human-readable formats.
+        """
+
+        if isinstance(telecom, list):  # multiple telecoms
+            telecoms = []
+            for t in telecom:
+                telecoms.append(self._parse_telecoms(t))
+
+        telRaw = self.patientRole["telecom"]["@value"]
+        if telRaw.startswith("tel:"):
+            tel = telRaw[4:]
+        elif telRaw.startswith("mailTo:"):
+            tel = telRaw[7:]
+        else:
+            tel = telRaw
+
+        telType = self.get_data(
+            self.patientRole["telecom"], field="@use", codesystem="hl7_address_use"
+        )
+
+        return [tel, telType]
+
+    def _get_lang_and_pref(self, entry):
+        """
+        Extract a language and associated preference code from `entry`.
+        """
+
+        langCode = entry["languageCode"].get("@code", None)
+
+        if langCode is not None:
+            lang = iso639.Lang(langCode).name
+        else:
+            lang = "no info"
+
+        try:
+            preferred = {"true": "yes", "false": "no"}[entry["preferenceInd"]["@value"]]
+        except KeyError:
+            preferred = "no info"
+
+        return lang, preferred
+
+    def _parse_smoking_data(self, entry):
+        """
+        Parse a smoking status observation.
+        """
+
+        entry = entry["observation"]
+        status = "no info"
+        date = "no info"
+        good = False
+
+        code = entry["code"]["@code"]
+        if code in ["72166-2", "ASSERTION"]:
+            good = True
+            status = self.get_data(entry["value"])
+            date = (
+                entry["effectiveTime"]
+                .get("low", entry["effectiveTime"])
+                .get("@value", "no info")
+            )
+            if date != "no info":
+                date = self._parse_date(date)
+
+        return status, date, good
+
+    # PATIENT DATA FUNCTIONS
+
+    @property
+    def name(self):
+        """
+        Retrieve the patient's name.
+        """
+        raw_name = self.patient["name"]
+
+        name = self._parse_name(raw_name)
+
+        return name
+
+    @property
+    def gender(self):
+        """
+        Retrieve the patient's gender.
+        """
+
+        return self.get_data(self.patient["administrativeGenderCode"])
+
+    @property
+    def dob(self):
+        """
+        Get the patient's date of birth, formatted as MM/DD/YYYY.
+        """
+
+        dob_raw = self.patient.get("birthTime", {}).get("@value", "no info")
+        return self._parse_date(dob_raw)
+
+    @property
+    def race_ethnicity(self):
+        """
+        Retrieve the patient's race and ethnicity (as a tuple, `(race, ethnicity)`).
+        """
+        patientRace = self.get_data(self.patient["raceCode"])
+        patientEthnicity = self.get_data(self.patient["ethnicGroupCode"])
+
+        return patientRace, patientEthnicity
+
+    @property
+    def languages(self):
+        """
+        Return the patient's languages and preferences.
+
+        Returns two lists. The first is a list of human-readable language names, and the second is a list of yes/no preferences.
+        """
+
+        langs, prefs = [], []
+
+        if isinstance(self.patient["languageCommunication"], dict):
+            lang, pref = self._get_lang_and_pref(self.patient["languageCommunication"])
+            return [lang], [pref]
+        else:
+            for entry in self.patient["languageCommunication"]:
+                lang, pref = self._get_lang_and_pref(entry)
+                langs.extend([lang])
+                prefs.extend([pref])
+            return langs, prefs
+
+    @property
+    def address(self):
+        """
+        Retrieve the patient's address.
+        Returns a string suitable for printing.
+        """
+        addr_raw = self.patientRole["addr"]
+        print(addr_raw)
+        addr = self._parse_addr(addr_raw)
+
+        return addr
+
+    @property
+    def phone(self):
+        """
+        Get the patient's phone and phone type as a tuple.
+        """
+        phoneNumber = self.patientRole["telecom"]["@value"][4:]
+        phoneType = self.get_data(
+            self.patientRole["telecom"], field="@use", codesystem="hl7_address_use"
+        )
+
+        return phoneNumber, phoneType
+
+    @property
+    def smoking_status(self):
+        """
+        Retrieve the patient's smoking status and date.
+        """
+
+        social_comp = self.get_component("Social history")
+        smoking_entries = social_comp["section"]["entry"]
+
+        smoking_status = "no info"
+        smoking_date = "no info"
+        good = False
+
+        if isinstance(smoking_entries, dict):
+            smoking_status, smoking_date, good = self._parse_smoking_data(
+                smoking_entries
+            )
+        else:
+            for entry in smoking_entries:
+                smoking_status, smoking_date, good = self._parse_smoking_data(entry)
+                if good:
+                    break
+
+        return smoking_status, smoking_date
+
     @property
     def height(self):
         """
@@ -488,3 +543,86 @@ class Parser:
             return "no info"
 
         coverage_acty = insurance_comp["entry"]["act"]
+        policy_acty = coverage_acty["entryRelationship"]["act"]
+
+        performer_oids = [
+            performer["templateId"]["@root"] for performer in policy_acty["performer"]
+        ]
+
+        if (
+            "2.16.840.1.113883.10.20.22.4.87" not in performer_oids
+        ):  # no insurance company info
+            return "no info"
+
+        if "2.16.840.1.113883.10.20.22.4.88" not in performer_oids:  # no gurantor info
+            return "no info"
+
+        company_info = performer_oids.index("2.16.840.1.113883.10.20.22.4.87")
+        gurantor_info = performer_oids.index("2.16.840.1.113883.10.20.22.4.88")
+
+        company_name = self._parse_name(
+            policy_acty["performer"][company_info]["assignedEntity"][
+                "representedOrganization"
+            ]["name"]
+        )
+        company_telecom = self._parse_telecoms(
+            policy_acty["performer"][company_info]["assignedEntity"][
+                "representedOrganization"
+            ]["telecom"]
+        )
+        company_addr = self._parse_addr(
+            policy_acty["performer"][company_info]["assignedEntity"][
+                "representedOrganization"
+            ]["addr"]
+        )
+        print(
+            policy_acty["performer"][company_info]["assignedEntity"][
+                "representedOrganization"
+            ]["addr"]
+        )
+
+        gurantor_name = self._parse_name(
+            policy_acty["performer"][gurantor_info]["assignedEntity"]["assignedPerson"][
+                "name"
+            ]
+        )
+        gurantor_telecom = self._parse_telecoms(
+            policy_acty["performer"][gurantor_info]["assignedEntity"]["telecom"]
+        )
+        gurantor_addr = self._parse_addr(
+            policy_acty["performer"][gurantor_info]["assignedEntity"]["addr"]
+        )
+
+        participant_oids = [
+            participant["templateId"]["@root"]
+            for participant in policy_acty["participant"]
+        ]
+
+        if (
+            "2.16.840.1.113883.10.20.22.4.90" not in participant_oids
+        ):  # no policy holder info
+            return "no info"
+
+        subscriber_info = participant_oids.index("2.16.840.1.113883.10.20.22.4.90")
+
+        subscriber_id = policy_acty["participant"][subscriber_info]["participantRole"][
+            "id"
+        ]["@extension"]
+
+        company_data = {
+            "name": company_name,
+            "addr": company_addr,
+            "telecom": company_telecom,
+        }
+        gurantor_data = {
+            "name": gurantor_name,
+            "addr": gurantor_addr,
+            "telecom": gurantor_telecom,
+        }
+
+        out = {
+            "company": company_data,
+            "gurantor": gurantor_data,
+            "sub_id": subscriber_id,
+        }
+        return out
