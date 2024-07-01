@@ -12,7 +12,7 @@ from datetime import datetime
 from iso639 import Lang
 from codeData import *
 
-ccda_filename = r"CCDAs\Sample CCDA 2.xml"
+ccda_filename = r"C:\Users\mfdal\Desktop\Projects\Garron\CCDA Parser\src\CCDAs\Sample CCDA 2.xml"
 
 with open(ccda_filename) as ccda:
     ccda_text = ccda.read()

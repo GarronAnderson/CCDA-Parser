@@ -1,289 +1,614 @@
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parser &mdash; CCDA Parser 0.0.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
-<html lang="en" data-content_root="../">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>parser &#8212; CCDA Parser 0.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
-    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
-    <script src="../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=47de8214"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
 
-  
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
 
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
           
+          
+          <a href="../index.html" class="icon icon-home">
+            CCDA Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">src</a></li>
+</ul>
 
-          <div class="body" role="main">
-            
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CCDA Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">parser</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <h1>Source code for parser</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">CCDA Parser</span>
-
+<span class="sd">6/30/24</span>
 <span class="sd">By Garron Anderson&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">sqlite3</span> <span class="k">as</span> <span class="nn">sqlite</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span> <span class="k">as</span> <span class="nn">sqlite</span>
 
 <span class="kn">import</span> <span class="nn">xmltodict</span>
+
+<span class="kn">import</span> <span class="nn">iso639</span>
+<span class="kn">from</span> <span class="nn">pint</span> <span class="kn">import</span> <span class="n">UnitRegistry</span>
+
 
 <div class="viewcode-block" id="ParserException">
 <a class="viewcode-back" href="../parser.html#parser.ParserException">[docs]</a>
 <span class="k">class</span> <span class="nc">ParserException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for when the parser raises an exception.&quot;&quot;&quot;</span>
-    <span class="k">pass</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for when the parser raises an exception.&quot;&quot;&quot;</span></div>
+
 
 
 <div class="viewcode-block" id="Parser">
 <a class="viewcode-back" href="../parser.html#parser.Parser">[docs]</a>
 <span class="k">class</span> <span class="nc">Parser</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse CCDA files.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The main class that handles the parsing of CCDA files.</span>
+
+<span class="sd">    Generates name, address, etc.&quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">ccda</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start up parser given a filename.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ccda</span><span class="p">:</span>  <span class="c1"># load file</span>
             <span class="n">ccda_text</span> <span class="o">=</span> <span class="n">ccda</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ccda_data</span> <span class="o">=</span> <span class="n">xmltodict</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">ccda_text</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccda_data</span><span class="p">[</span><span class="s2">&quot;ClinicalDocument&quot;</span><span class="p">][</span><span class="s2">&quot;recordTarget&quot;</span><span class="p">][</span><span class="s2">&quot;patientRole&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccda_data</span><span class="p">[</span><span class="s2">&quot;ClinicalDocument&quot;</span><span class="p">][</span><span class="s2">&quot;recordTarget&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;patientRole&quot;</span>
+        <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">patient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;patient&quot;</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccda_data</span><span class="p">[</span><span class="s2">&quot;ClinicalDocument&quot;</span><span class="p">][</span><span class="s2">&quot;component&quot;</span><span class="p">][</span><span class="s2">&quot;structuredBody&quot;</span><span class="p">][</span><span class="s2">&quot;component&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccda_data</span><span class="p">[</span><span class="s2">&quot;ClinicalDocument&quot;</span><span class="p">][</span><span class="s2">&quot;component&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;structuredBody&quot;</span>
+        <span class="p">][</span><span class="s2">&quot;component&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">component_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">)):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">component_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;section&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">][</span><span class="s2">&quot;@code&quot;</span><span class="p">])</span>
 
+        <span class="c1"># connect to db</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span> <span class="o">=</span> <span class="n">sqlite</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;codeDatabase.db&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Parser.name">
-<a class="viewcode-back" href="../parser.html#parser.Parser.name">[docs]</a>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the patient&#39;s name.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">patientGivenName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">][</span><span class="s2">&quot;given&quot;</span><span class="p">][</span><span class="s2">&quot;#text&quot;</span><span class="p">]</span>
-            <span class="n">patientFamilyName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">][</span><span class="s2">&quot;family&quot;</span><span class="p">][</span><span class="s2">&quot;#text&quot;</span><span class="p">]</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="n">patientGivenName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">][</span><span class="s2">&quot;given&quot;</span><span class="p">]</span>
-            <span class="n">patientFamilyName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">][</span><span class="s2">&quot;family&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ucum_registry</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="p">(</span><span class="n">system</span><span class="o">=</span><span class="s2">&quot;UCUM&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">patientGivenName</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">patientFamilyName</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height_factory</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Height&quot;</span><span class="p">,</span> <span class="s2">&quot;feet inches&quot;</span><span class="p">)</span>
 
+    <span class="c1"># INTERNAL FUNCTIONS</span>
 
-<div class="viewcode-block" id="Parser.gender">
-<a class="viewcode-back" href="../parser.html#parser.Parser.gender">[docs]</a>
-    <span class="k">def</span> <span class="nf">gender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the patient&#39;s gender.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_connect_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">sqlite</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;codeDatabase.db&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;administrativeGenderCode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s2">&quot;@displayName&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span>
-        <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Parser.DOB">
-<a class="viewcode-back" href="../parser.html#parser.Parser.DOB">[docs]</a>
-    <span class="k">def</span> <span class="nf">DOB</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the patient&#39;s date of birth.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">patientDOBRaw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;birthTime&quot;</span><span class="p">][</span><span class="s2">&quot;@value&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span>
-            <span class="n">patientDOB</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">patientDOBRaw</span><span class="p">,</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-                <span class="s2">&quot;%m/</span><span class="si">%d</span><span class="s2">/%Y&quot;</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="n">patientDOB</span> <span class="o">=</span> <span class="s2">&quot;no info&quot;</span>
-
-        <span class="k">return</span> <span class="n">patientDOB</span></div>
-
-
-<div class="viewcode-block" id="Parser.race_ethnicity">
-<a class="viewcode-back" href="../parser.html#parser.Parser.race_ethnicity">[docs]</a>
-    <span class="k">def</span> <span class="nf">race_ethnicity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the patient&#39;s race and ethnicity (as a tuple).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">patientRace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;raceCode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;@displayName&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span><span class="p">)</span>
-        <span class="n">patientEthnicity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;ethnicGroupCode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s2">&quot;@displayName&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">patientRace</span><span class="p">,</span> <span class="n">patientEthnicity</span></div>
-
-
-<div class="viewcode-block" id="Parser.address">
-<a class="viewcode-back" href="../parser.html#parser.Parser.address">[docs]</a>
-    <span class="k">def</span> <span class="nf">address</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the patient&#39;s address.</span>
-<span class="sd">        Returns a 3 line string suitable for printing.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">patientAddrLine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;streetAddressLine&quot;</span><span class="p">]</span>
-            <span class="n">patientAddrCity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;city&quot;</span><span class="p">]</span>
-            <span class="n">patientAddrState</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;state&quot;</span><span class="p">]</span>
-            <span class="n">patientAddrZIP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;postalCode&quot;</span><span class="p">]</span>
-            <span class="n">patientAddrCountry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;country&quot;</span><span class="p">]</span>
-
-            <span class="n">patientAddr</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">patientAddrLine</span>
-                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="o">+</span> <span class="n">patientAddrCity</span>
-                <span class="o">+</span> <span class="s2">&quot;, &quot;</span>
-                <span class="o">+</span> <span class="n">patientAddrState</span>
-                <span class="o">+</span> <span class="s2">&quot; &quot;</span>
-                <span class="o">+</span> <span class="n">patientAddrZIP</span>
-                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="o">+</span> <span class="n">patientAddrCountry</span>
-            <span class="p">)</span>
-            
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="n">patientAddr</span> <span class="o">=</span> <span class="s1">&#39;no info&#39;</span>
-        
-        <span class="k">return</span> <span class="n">patientAddr</span></div>
-
-    
 <div class="viewcode-block" id="Parser.lookup_code">
 <a class="viewcode-back" href="../parser.html#parser.Parser.lookup_code">[docs]</a>
     <span class="k">def</span> <span class="nf">lookup_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">codesystem</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Lookup a code in the SQLite database by codesystem.</span>
-<span class="sd">        </span>
+
 <span class="sd">        To perform a reverse lookup, prefix &#39;codesystem&#39; with &#39;reverse_&#39;.</span>
+
+<span class="sd">        Will return &#39;no info&#39; if no code provided.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;no info&#39;</span>
-        
-        <span class="n">query_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;code&#39;</span><span class="p">:</span><span class="n">code</span><span class="p">}</span>
-        
+            <span class="k">return</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="n">query_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">}</span>
+
         <span class="k">if</span> <span class="n">codesystem</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;reverse_&quot;</span><span class="p">):</span>
             <span class="n">codesystem</span> <span class="o">=</span> <span class="n">codesystem</span><span class="p">[</span><span class="mi">8</span><span class="p">:]</span>
-            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SELECT code FROM </span><span class="si">{</span><span class="n">codesystem</span><span class="si">}</span><span class="s2"> WHERE description = :code&quot;</span><span class="p">,</span> <span class="n">query_params</span><span class="p">)</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;SELECT code FROM </span><span class="si">{</span><span class="n">codesystem</span><span class="si">}</span><span class="s2"> WHERE description = :code&quot;</span><span class="p">,</span> <span class="n">query_params</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SELECT description FROM </span><span class="si">{</span><span class="n">codesystem</span><span class="si">}</span><span class="s2"> WHERE code = :code&quot;</span><span class="p">,</span> <span class="n">query_params</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;SELECT description FROM </span><span class="si">{</span><span class="n">codesystem</span><span class="si">}</span><span class="s2"> WHERE code = :code&quot;</span><span class="p">,</span> <span class="n">query_params</span>
+            <span class="p">)</span>
 
-    
+        <span class="n">out</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+
 <div class="viewcode-block" id="Parser.get_data">
 <a class="viewcode-back" href="../parser.html#parser.Parser.get_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">codesystem</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="s2">&quot;@code&quot;</span><span class="p">,</span> <span class="n">codesystem</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the data from an object with a field.</span>
-<span class="sd">        </span>
-<span class="sd">        Does not yet support auto-detecting codesystem -</span>
-<span class="sd">        so codesystem must be provided as an argument.</span>
+
+<span class="sd">        Can autodetect codesystem or take a codesystem name (as table name in SQLite database) to work with.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="k">if</span> <span class="n">codesystem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ParserExcepetion</span><span class="p">(</span><span class="s2">&quot;must provide codesystem&quot;</span><span class="p">)</span>
-        
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="k">if</span> <span class="n">codesystem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># autodetect</span>
+            <span class="n">codesys_raw</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;@codeSystem&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">codesys_raw</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># no info, can&#39;t autodetect</span>
+                <span class="k">raise</span> <span class="n">ParserException</span><span class="p">(</span><span class="s2">&quot;must provide codesystem&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+
+            <span class="n">r</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db_cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="s2">&quot;select codesystem_name from codesystems where codesystem_id = ?&quot;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="n">codesys_raw</span><span class="p">,),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">codesystem</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">r</span><span class="p">:</span>
+                <span class="n">codesystem</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">codesystem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ParserException</span><span class="p">(</span><span class="s2">&quot;must provide codesystem&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+
+        <span class="c1"># grab code</span>
         <span class="n">code</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        
+        <span class="c1"># and look up</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookup_code</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">codesystem</span><span class="p">)</span>
-        
+
         <span class="k">return</span> <span class="n">data</span></div>
 
-        
+
 <div class="viewcode-block" id="Parser.get_component">
 <a class="viewcode-back" href="../parser.html#parser.Parser.get_component">[docs]</a>
     <span class="k">def</span> <span class="nf">get_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get one of the components. Handles a variable number of components and different titles.</span>
-<span class="sd">        </span>
-<span class="sd">        Uses lookup_code to access database.</span>
+
+<span class="sd">        Uses lookup_code to access database and a dict to handle multiple names.</span>
+
+<span class="sd">        Returns `None` if component not found.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+
+        <span class="c1"># multiple possibilites</span>
+        <span class="n">components_possible</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Vital Signs&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;Vital signs&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Vital signs, weight, height, head circumference, oxygen saturation &amp; BMI panel&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># use index</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">components_possible</span><span class="p">:</span>
+            <span class="c1"># ok, multiple possibilities</span>
+            <span class="k">for</span> <span class="n">new_name</span> <span class="ow">in</span> <span class="n">components_possible</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+                <span class="c1"># run through each</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">new_name</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                    <span class="k">pass</span>  <span class="c1"># couldn&#39;t find it</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">index</span><span class="o">=</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">component_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">lookup_code</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">codesystem</span><span class="o">=</span><span class="s1">&#39;reverse_loinc&#39;</span><span class="p">)))</span></div>
+            <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookup_code</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">codesystem</span><span class="o">=</span><span class="s2">&quot;reverse_loinc&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">code</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_list</span><span class="p">:</span>  <span class="c1"># non existent component</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">component_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">code</span><span class="p">))</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_date</span><span class="p">(</span><span class="n">date_str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse a YYYYMMDD date to MM/DD/YYYY.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">date_str</span><span class="p">[:</span><span class="mi">8</span><span class="p">],</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+                <span class="s2">&quot;%m/</span><span class="si">%d</span><span class="s2">/%Y&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;no info&quot;</span>
+
+    <span class="c1"># DATA FUNCTIONS</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the patient&#39;s name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">given_name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;given&quot;</span><span class="p">]</span>
+            <span class="n">family_name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;family&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">given_name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="s2">&quot;given&quot;</span><span class="p">]</span>
+            <span class="n">family_name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="s2">&quot;family&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">given_name</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">given_name</span> <span class="o">=</span> <span class="n">given_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;#text&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">family_name</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">family_name</span> <span class="o">=</span> <span class="n">family_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;#text&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">given_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">family_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">gender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the patient&#39;s gender.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;administrativeGenderCode&quot;</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dob</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the patient&#39;s date of birth, formatted as MM/DD/YYYY.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dob_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;birthTime&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;@value&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_date</span><span class="p">(</span><span class="n">dob_raw</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">race_ethnicity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the patient&#39;s race and ethnicity (as a tuple, `(race, ethnicity)`).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">patientRace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;raceCode&quot;</span><span class="p">])</span>
+        <span class="n">patientEthnicity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;ethnicGroupCode&quot;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">patientRace</span><span class="p">,</span> <span class="n">patientEthnicity</span>
+
+    <span class="k">def</span> <span class="nf">_get_lang_and_pref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract a language and associated preference code from `entry`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">langCode</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;languageCode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;@code&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">langCode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lang</span> <span class="o">=</span> <span class="n">iso639</span><span class="o">.</span><span class="n">Lang</span><span class="p">(</span><span class="n">langCode</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lang</span> <span class="o">=</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">preferred</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;true&quot;</span><span class="p">:</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">:</span> <span class="s2">&quot;no&quot;</span><span class="p">}[</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;preferenceInd&quot;</span><span class="p">][</span><span class="s2">&quot;@value&quot;</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">preferred</span> <span class="o">=</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="k">return</span> <span class="n">lang</span><span class="p">,</span> <span class="n">preferred</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">languages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the patient&#39;s languages and preferences.</span>
+
+<span class="sd">        Returns two lists. The first is a list of human-readable language names, and the second is a list of yes/no preferences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">langs</span><span class="p">,</span> <span class="n">prefs</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;languageCommunication&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">lang</span><span class="p">,</span> <span class="n">pref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_lang_and_pref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;languageCommunication&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">lang</span><span class="p">],</span> <span class="p">[</span><span class="n">pref</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">patient</span><span class="p">[</span><span class="s2">&quot;languageCommunication&quot;</span><span class="p">]:</span>
+                <span class="n">lang</span><span class="p">,</span> <span class="n">pref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_lang_and_pref</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+                <span class="n">langs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">lang</span><span class="p">])</span>
+                <span class="n">prefs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">pref</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">langs</span><span class="p">,</span> <span class="n">prefs</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">address</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the patient&#39;s address.</span>
+<span class="sd">        Returns a string suitable for printing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">addrLines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;streetAddressLine&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">addrLines</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">addrLine</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">addrLines</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">addrLine</span> <span class="o">=</span> <span class="n">addrLines</span>
+            <span class="n">addrCity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;city&quot;</span><span class="p">]</span>
+            <span class="n">addrState</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;state&quot;</span><span class="p">]</span>
+            <span class="n">addrZIP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;postalCode&quot;</span><span class="p">]</span>
+            <span class="n">addrCountry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;addr&quot;</span><span class="p">][</span><span class="s2">&quot;country&quot;</span><span class="p">]</span>
+
+            <span class="n">addr</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">addrLine</span>
+                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="n">addrCity</span>
+                <span class="o">+</span> <span class="s2">&quot;, &quot;</span>
+                <span class="o">+</span> <span class="n">addrState</span>
+                <span class="o">+</span> <span class="s2">&quot; &quot;</span>
+                <span class="o">+</span> <span class="n">addrZIP</span>
+                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="n">addrCountry</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">addr</span> <span class="o">=</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="k">return</span> <span class="n">addr</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">phone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the patient&#39;s phone and phone type as a tuple.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phoneNumber</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;telecom&quot;</span><span class="p">][</span><span class="s2">&quot;@value&quot;</span><span class="p">][</span><span class="mi">4</span><span class="p">:]</span>
+        <span class="n">phoneType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">patientRole</span><span class="p">[</span><span class="s2">&quot;telecom&quot;</span><span class="p">],</span> <span class="n">field</span><span class="o">=</span><span class="s2">&quot;@use&quot;</span><span class="p">,</span> <span class="n">codesystem</span><span class="o">=</span><span class="s2">&quot;hl7_address_use&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">phoneNumber</span><span class="p">,</span> <span class="n">phoneType</span>
+
+    <span class="k">def</span> <span class="nf">_parse_smoking_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse a smoking status observation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;observation&quot;</span><span class="p">]</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;no info&quot;</span>
+        <span class="n">date</span> <span class="o">=</span> <span class="s2">&quot;no info&quot;</span>
+        <span class="n">good</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">code</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">][</span><span class="s2">&quot;@code&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">code</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;72166-2&quot;</span><span class="p">,</span> <span class="s2">&quot;ASSERTION&quot;</span><span class="p">]:</span>
+            <span class="n">good</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+            <span class="n">date</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;effectiveTime&quot;</span><span class="p">]</span>
+                <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;effectiveTime&quot;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;@value&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">date</span> <span class="o">!=</span> <span class="s2">&quot;no info&quot;</span><span class="p">:</span>
+                <span class="n">date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_date</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">status</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">good</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">smoking_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the patient&#39;s smoking status and date.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">social_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="s2">&quot;Social history&quot;</span><span class="p">)</span>
+        <span class="n">smoking_entries</span> <span class="o">=</span> <span class="n">social_comp</span><span class="p">[</span><span class="s2">&quot;section&quot;</span><span class="p">][</span><span class="s2">&quot;entry&quot;</span><span class="p">]</span>
+
+        <span class="n">smoking_status</span> <span class="o">=</span> <span class="s2">&quot;no info&quot;</span>
+        <span class="n">smoking_date</span> <span class="o">=</span> <span class="s2">&quot;no info&quot;</span>
+        <span class="n">good</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smoking_entries</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">smoking_status</span><span class="p">,</span> <span class="n">smoking_date</span><span class="p">,</span> <span class="n">good</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_smoking_data</span><span class="p">(</span>
+                <span class="n">smoking_entries</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">smoking_entries</span><span class="p">:</span>
+                <span class="n">smoking_status</span><span class="p">,</span> <span class="n">smoking_date</span><span class="p">,</span> <span class="n">good</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_smoking_data</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">good</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">smoking_status</span><span class="p">,</span> <span class="n">smoking_date</span>
+
+    <span class="k">def</span> <span class="nf">_get_vital_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vital</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method to get the LOINC codes for a given vital sign.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">possible_codes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Height&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Height&quot;</span><span class="p">,</span> <span class="s2">&quot;Body height&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;Weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Weight&quot;</span><span class="p">,</span> <span class="s2">&quot;Body weight&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;BMI&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Body mass index&quot;</span><span class="p">],</span>
+            <span class="c1"># Add other vitals as needed</span>
+        <span class="p">}</span>
+
+        <span class="n">descriptions</span> <span class="o">=</span> <span class="n">possible_codes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">vital</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">codes</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connect_db</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">description</span> <span class="ow">in</span> <span class="n">descriptions</span><span class="p">:</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="s2">&quot;SELECT code FROM loinc WHERE description = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">description</span><span class="p">,)</span>
+                <span class="p">)</span>
+                <span class="n">codes</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()])</span>
+
+        <span class="k">return</span> <span class="n">codes</span>
+
+<div class="viewcode-block" id="Parser.get_latest_vital">
+<a class="viewcode-back" href="../parser.html#parser.Parser.get_latest_vital">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_latest_vital</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vital</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the latest entry for a given vital sign.</span>
+<span class="sd">        Returns a tuple of `(value, unit)`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">vital_entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Vital Signs&quot;</span><span class="p">)[</span><span class="s2">&quot;section&quot;</span><span class="p">][</span><span class="s2">&quot;entry&quot;</span><span class="p">]</span>
+        <span class="n">vital_codes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vital_codes</span><span class="p">(</span><span class="n">vital</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">vital_codes</span><span class="p">:</span>  <span class="c1"># bad vital or no entry in db</span>
+            <span class="k">raise</span> <span class="n">ParserException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid vital </span><span class="si">{</span><span class="n">vital</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">vital_signs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>  <span class="c1"># for only 1 set of stuff</span>
+            <span class="n">vital_signs</span> <span class="o">=</span> <span class="n">vital_entries</span><span class="p">[</span><span class="s2">&quot;organizer&quot;</span><span class="p">][</span><span class="s2">&quot;component&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># ignore and search through</span>
+
+        <span class="k">if</span> <span class="n">vital_signs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># search through</span>
+            <span class="n">code_found</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">effective_times</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">vital_entries</span><span class="p">)</span>
+            <span class="n">obs_indexes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">vital_entries</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vital_entries</span><span class="p">):</span>  <span class="c1"># for each entry</span>
+                <span class="n">vital_obs</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;organizer&quot;</span><span class="p">][</span><span class="s2">&quot;component&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">obs</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vital_obs</span><span class="p">):</span>  <span class="c1"># pull each observation</span>
+                    <span class="n">observation</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;observation&quot;</span><span class="p">]</span>
+                    <span class="n">obs_code</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">][</span><span class="s2">&quot;@code&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">obs_code</span> <span class="ow">in</span> <span class="n">vital_codes</span><span class="p">:</span>  <span class="c1"># if the code matches</span>
+                        <span class="k">try</span><span class="p">:</span>  <span class="c1"># and the effectiveTime exists</span>
+                            <span class="n">effectiveTime</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">&quot;effectiveTime&quot;</span><span class="p">][</span><span class="s2">&quot;@value&quot;</span><span class="p">]</span>
+                        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>  <span class="c1"># couldn&#39;t find it, ignore</span>
+                            <span class="k">continue</span>
+                        <span class="c1"># then update list of times and indexes (and mark code as found)</span>
+                        <span class="n">effective_times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">effectiveTime</span><span class="p">)</span>
+                        <span class="n">obs_indexes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+                        <span class="n">code_found</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="n">code_found</span><span class="p">:</span>  <span class="c1"># the observation existed</span>
+                <span class="c1"># now find the max effective time</span>
+                <span class="n">newest_index</span> <span class="o">=</span> <span class="n">effective_times</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">effective_times</span><span class="p">))</span>
+                <span class="c1"># and pull the observation</span>
+                <span class="n">obs</span> <span class="o">=</span> <span class="n">vital_entries</span><span class="p">[</span><span class="n">newest_index</span><span class="p">][</span><span class="s2">&quot;organizer&quot;</span><span class="p">][</span><span class="s2">&quot;component&quot;</span><span class="p">]</span>
+                <span class="n">obs_index</span> <span class="o">=</span> <span class="n">obs_indexes</span><span class="p">[</span><span class="n">newest_index</span><span class="p">]</span>
+
+                <span class="n">obs_value</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="n">obs_index</span><span class="p">][</span><span class="s2">&quot;observation&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">][</span><span class="s2">&quot;@value&quot;</span><span class="p">]</span>
+                <span class="n">obs_unit</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="n">obs_index</span><span class="p">][</span><span class="s2">&quot;observation&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">][</span><span class="s2">&quot;@unit&quot;</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">obs_value</span><span class="p">,</span> <span class="n">obs_unit</span>
+
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># observation didn&#39;t exist</span>
+                <span class="k">return</span> <span class="s2">&quot;no info&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># 1 set of observations</span>
+            <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">vital_signs</span><span class="p">:</span>
+                <span class="n">observation</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;observation&quot;</span><span class="p">]</span>
+                <span class="n">obs_code</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">][</span><span class="s2">&quot;@code&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">obs_code</span> <span class="ow">in</span> <span class="n">vital_codes</span><span class="p">:</span>  <span class="c1"># found it</span>
+                    <span class="c1"># grab value</span>
+                    <span class="n">obs_value</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">][</span><span class="s2">&quot;@value&quot;</span><span class="p">]</span>
+                    <span class="n">obs_unit</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">][</span><span class="s2">&quot;@unit&quot;</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="n">obs_value</span><span class="p">,</span> <span class="n">obs_unit</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the patient&#39;s latest height as a namedtuple with `feet` and `inches` fields.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">raw_height</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_latest_vital</span><span class="p">(</span><span class="s2">&quot;Height&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">raw_height</span> <span class="o">==</span> <span class="s2">&quot;no info&quot;</span> <span class="ow">or</span> <span class="n">unit</span> <span class="o">==</span> <span class="s2">&quot;no info&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">height_factory</span><span class="p">(</span><span class="s2">&quot;no info&quot;</span><span class="p">,</span> <span class="s2">&quot;no info&quot;</span><span class="p">)</span>
+
+        <span class="n">height</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">raw_height</span><span class="p">)</span>
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ucum_registry</span><span class="o">.</span><span class="n">parse_expression</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;inches&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="p">)</span>
+        <span class="n">feet</span><span class="p">,</span> <span class="n">inches</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+
+        <span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height_factory</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">feet</span><span class="p">),</span> <span class="nb">round</span><span class="p">(</span><span class="n">inches</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">height</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">weight</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the patient&#39;s latest weight in pounds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">raw_weight</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_latest_vital</span><span class="p">(</span><span class="s2">&quot;Weight&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">raw_weight</span> <span class="o">==</span> <span class="s2">&quot;no info&quot;</span> <span class="ow">or</span> <span class="n">unit</span> <span class="o">==</span> <span class="s2">&quot;no info&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">raw_weight</span><span class="p">)</span>
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ucum_registry</span><span class="o">.</span><span class="n">parse_expression</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;pounds&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bmi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the patient&#39;s latest BMI.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">raw_bmi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_latest_vital</span><span class="p">(</span><span class="s2">&quot;BMI&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">raw_bmi</span> <span class="o">==</span> <span class="s2">&quot;no info&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">raw_bmi</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Parser.insurance">
+<a class="viewcode-back" href="../parser.html#parser.Parser.insurance">[docs]</a>
+    <span class="k">def</span> <span class="nf">insurance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">insurance_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="s2">&quot;Payment sources&quot;</span><span class="p">)[</span><span class="s2">&quot;section&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">insurance_comp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;no info&quot;</span>
+
+        <span class="n">coverage_acty</span> <span class="o">=</span> <span class="n">insurance_comp</span><span class="p">[</span><span class="s2">&quot;entry&quot;</span><span class="p">][</span><span class="s2">&quot;act&quot;</span><span class="p">]</span></div>
 </div>
 
-                
 </pre></div>
 
+           </div>
           </div>
-          
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Garron Anderson.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../index.html">CCDA Parser</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../modules.html">src</a></li>
-</ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-  <li><a href="index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;2024, Garron Anderson.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
-      
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>
